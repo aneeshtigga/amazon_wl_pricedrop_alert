@@ -7,6 +7,7 @@ from twilio.rest import Client
 import sys
 import csv
 import os
+import schedule
 
 
 # Initializing urls and headers - To mask bot like activities
@@ -171,5 +172,7 @@ def main():
         print('File initialized!')
     
 
-if __name__ == "__main__":
-    main()
+schedule.every().hour.do(main)
+
+while True:
+    schedule.run_pending()
