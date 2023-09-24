@@ -74,9 +74,9 @@ def write_init_data():
         for x in range(len(products)):
             id = int(x+1)
             product_name = products[x].find('a').text.lstrip().rstrip()
-            initial_price = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
-            current_low = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
-            current = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
+            initial_price = int(prices[x].find('span').text.replace(',', '').replace('₹', '').split('.')[0])
+            current_low = int(prices[x].find('span').text.replace(',', '').replace('₹', '').split('.')[0])
+            current = int(prices[x].find('span').text.replace(',', '').replace('₹', '').split('.')[0])
             offer = (((int(initial_price))-(int(current)))/int(initial_price))*100
             url = 'https://amazon.in'+products[x].find('a')['href'].split('?')[0]
             writer.writerow([id, product_name, initial_price, current_low, current, offer, url])
@@ -91,7 +91,7 @@ def fetch_current_price():
     products, prices = fetch_latest_data(target_url, headers)
     for x in range(len(products)):
         id.append(x+1)
-        price_parsed.append(int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', '')))
+        price_parsed.append(int(prices[x].find('span').text.replace(',', '').replace('₹', '').split('.')[0]))
     data = {'id': id, 'new_price': price_parsed}
     # print(data)
     df2 = pd.DataFrame(data)
