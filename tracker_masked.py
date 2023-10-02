@@ -8,6 +8,7 @@ import sys
 import csv
 import os
 import schedule
+import datetime
 
 
 # Initializing urls and headers - To mask bot like activities
@@ -52,57 +53,61 @@ headers={"User-Agent":useragents[random.randint(0,31)],"accept-language": "en-US
 
 
 def get_prod_info(soup):
-    product_list = soup.find_all('h2',{'class':'a-size-base'})
-    price_list = soup.find_all('span',{'class':'a-price'})
-    return product_list, price_list
+    product_list = soup.find('ul',{'id':'g-items'}).find_all('li',{'class':'g-item-sortable'})
+    data = []
+    for x in range(len(product_list)):
+        product_name = product_list[x].find('h2',{'class':'a-size-base'}).find('a').text.lstrip().rstrip()
+        price = int(product_list[x].find('span',{'class':'a-price'}).find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
+        url = 'https://amazon.in'+product_list[x].find('a')['href'].split('?')[0]
+        details = {
+            'id':int(x+1),
+            'product_name':product_name,
+            'current':price,
+            'url':url
+        }
+        data.append(details)
+    return data
 
 def fetch_latest_data(target_url, headers):
     resp = requests.get(target_url,headers=headers)
     soup = BeautifulSoup(resp.text,'html.parser')
-    products, prices = get_prod_info(soup)
-    return products, prices
+    product_data = get_prod_info(soup)
+    return product_data
 
 
 # initialize price_tracker file
 
 def write_init_data():
-    products, prices = fetch_latest_data(target_url, headers)
-    with open('price_tracker.csv', 'w', newline='', encoding='utf-8') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(['id','product_name', 'initial_price', 'current_low', 'current', 'offer', 'url'])
+    products_data = fetch_latest_data(target_url, headers)
 
-        for x in range(len(products)):
-            id = int(x+1)
-            product_name = products[x].find('a').text.lstrip().rstrip()
-            initial_price = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
-            current_low = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
-            current = int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
-            offer = (((int(initial_price))-(int(current)))/int(initial_price))*100
-            url = 'https://amazon.in'+products[x].find('a')['href'].split('?')[0]
-            writer.writerow([id, product_name, initial_price, current_low, current, offer, url])
-            print(id, product_name, initial_price, current_low, current, offer, url)
+    df = pd.DataFrame(products_data)
+    df['initial_price'] = df['current']
+    df['current_low'] = df['current']
+    df['offer'] = ((df['initial_price']-df['current'])/df['initial_price'])*100
 
+    df = df[['id','product_name','initial_price','current_low','current','offer','url']]
+    df.to_csv('price_tracker.csv', index=False)
+
+    print(df)
 
 # check for price drop and update csv
 
 def fetch_current_price():
-    id = []
-    price_parsed = []
-    products, prices = fetch_latest_data(target_url, headers)
-    for x in range(len(products)):
-        id.append(x+1)
-        price_parsed.append(int(prices[x].find('span').text.replace(',', '').replace('₹', '').replace('.00', '')))
-    data = {'id': id, 'new_price': price_parsed}
+    products_data = fetch_latest_data(target_url, headers)
+    
+    df2 = pd.DataFrame(products_data)
+    df2 = df2.rename(columns={'current':'new_price'})
+    df2 = df2[['id','new_price']]
     # print(data)
-    df2 = pd.DataFrame(data)
+
     df = pd.read_csv('price_tracker.csv')
     
     #joining old data with new data
     df = df.merge(df2, on='id', how='left')
     
     # Updating current low
-    df.loc[df['current_low'] > df['new_price'], 'current_low'] = df['new_price']
-    
+    df['current_low'] = df[['initial_price','new_price','current_low']].min(axis=1)
+
     # Updating current price
     df['current']=df['new_price']
     
@@ -152,7 +157,7 @@ def check_file_exists(file_path):
 # Send notification if any of the items has more than 8% drop in price
 
 def send_offer_notifications():
-    df = pd.read_csv('master_data.csv')
+    df = pd.read_csv('price_tracker.csv')
     discounts = df[df['offer'] > 8]
     if discounts.empty:
         print("No offers yet")
@@ -163,7 +168,8 @@ def send_offer_notifications():
 
 
 def main():
-    if check_file_exists("master_data.csv"):
+    print(datetime.datetime.now())
+    if check_file_exists("price_tracker.csv"):
         print("Updating prices...")
         fetch_current_price()
         send_offer_notifications()
@@ -172,7 +178,7 @@ def main():
         print('File initialized!')
     
 
-schedule.every().hour.do(main)
+schedule.every(5).minutes.do(main)
 
 while True:
     schedule.run_pending()
