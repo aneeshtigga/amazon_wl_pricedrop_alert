@@ -98,6 +98,7 @@ def fetch_current_price():
     df2 = pd.DataFrame(products_data)
     df2 = df2.rename(columns={'current':'new_price'})
     df2 = df2[['id','new_price']]
+
     # print(data)
 
     df = pd.read_csv('price_tracker.csv')
