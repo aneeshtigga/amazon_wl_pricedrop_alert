@@ -57,7 +57,10 @@ def get_prod_info(soup):
     data = []
     for x in range(len(product_list)):
         product_name = product_list[x].find('h2',{'class':'a-size-base'}).find('a').text.lstrip().rstrip()
-        price = int(product_list[x].find('span',{'class':'a-price'}).find('span').text.replace(',', '').replace('₹', '').replace('.00', ''))
+        price_element = product_list[x].find('span', {'class': 'a-price'})
+        span_element = price_element and price_element.find('span')
+        price_text = span_element and span_element.text.replace(',', '').replace('₹', '').replace('.00', '')
+        price = int(price_text) if price_text else None
         url = 'https://amazon.in'+product_list[x].find('a')['href'].split('?')[0]
         details = {
             'id':int(x+1),
