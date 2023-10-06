@@ -122,7 +122,7 @@ def generate_msg_content(offers):
     # Loop through each row in the DataFrame
     for index, row in offers.iterrows():
         # Generate a sentence from the row
-        sentence = f"'{row['product_name']}' is now selling for ₹{row['current']}. The price is {row['offer']}% off and the lowest price recorded is ₹{row['current_low']}. {row['url']}.\n\n"
+        sentence = f"'{row['product_name']}' is now selling for ₹{row['current']}. The price is {row['offer']:.2f}% off and the lowest price recorded is ₹{row['current_low']}. {row['url']}.\n\n"
         
         # Add the sentence to the list
         sentences+=sentence
