@@ -9,6 +9,7 @@ import csv
 import os
 import schedule
 import datetime
+import time
 
 
 # Initializing urls and headers - To mask bot like activities
@@ -186,3 +187,4 @@ schedule.every(5).minutes.do(main)
 
 while True:
     schedule.run_pending()
+    time.sleep(1)
