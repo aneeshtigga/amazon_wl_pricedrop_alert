@@ -1,4 +1,4 @@
-# Amazon Wishlist Price-Drop Alert (WhatsApp)
+# :moneybag: Amazon Wishlist Price-Drop Alert (WhatsApp)
 Get alerts on your phone if any of your Amazon wishlist items has a price drop.
 
 ## How to use:
@@ -15,9 +15,8 @@ https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685f
 https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L134-L135
 7. Add your WhatsApp number
 https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L141
-8. Run the code.
-
-The first run should create a file called `price_tracker.csv`. On every consecutive run, it'll update the CSV file with the latest price information. Once the price drop on an item is more than `8%` (you can modify the threshold here)https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L155 you should recieve a notification on the mentioned WhatsApp number.
+8. Run the code. The first run should create a file called `price_tracker.csv`. On every consecutive run, it'll update the CSV file with the latest price information. Once the price drop on an item is more than `8%` (you can modify the threshold here)
+https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L155
 
 ## Output logs:
 ```
