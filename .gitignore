@@ -1,0 +1,13 @@
+# Secrets & local config
+.env
+
+# Generated data
+price_tracker.csv
+price_history.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/

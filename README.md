@@ -1,39 +1,87 @@
-# :moneybag: Amazon Wishlist Price-Drop Alert (WhatsApp)
-Get alerts on your phone if any of your Amazon wishlist items has a price drop.
+# 💰 Amazon Wishlist Price-Drop Alert
 
-## :rotating_light: Alert:
-![Screenshot](https://github.com/user-attachments/assets/ec96af50-9e08-44dd-8919-13da11bdb70e)
+Track an Amazon wishlist and get alerted when an item's price drops. Runs
+**console-only** out of the box; add Twilio credentials to also get **WhatsApp**
+alerts.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ec96af50-9e08-44dd-8919-13da11bdb70e" width="420" alt="WhatsApp price-drop alert">
+</p>
 
+## 🚀 Quick start
 
-## :ledger: Output logs:
+Needs **Python 3.10+**.
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env      # then set WISHLIST_URL (only required value)
+python tracker_masked.py
 ```
-2023-09-25 02:48:37.795554
-Updating prices...
-   id                                       product_name  initial_price  current_low  current      offer                               url
-0   1  Crucial RAM 16GB DDR5 4800MHz CL40 Laptop Memo...           3907         3907     3907   0.000000  https://amazon.in/dp/B09S2MN8JH/
-1   2  Crucial P5 Plus 2TB PCIe 4.0 3D NAND NVMe M.2 ...          11700        11700    15500 -32.478632  https://amazon.in/dp/B098WKQRDL/
-2   3  Samsung 980 PRO 2TB Up to 7,000 MB/s PCIe 4.0 ...          16389        16389    16389   0.000000  https://amazon.in/dp/B08QJHLC8J/
-3   4  Apple 2023 MacBook Air Laptop with M2 chip: 38...         145790       145790   145790   0.000000  https://amazon.in/dp/B0C76D5QPG/
-4   5  Apple 2023 MacBook Pro Laptop M2 Pro chip with...         199900       199900   199900   0.000000  https://amazon.in/dp/B0BSHHL4TY/
-No offers yet
-```
 
-## :information_desk_person: How to use:
-1. Login to your Amazon account and add items to your wishlist.
-2. Get a sharable link by selecting `Send list to others` -> `View only` -> `Copy link`.
+First run creates `price_tracker.csv` (your baseline). Each cycle re-checks
+prices and reports any drop over the threshold. Stop with `Ctrl+C`.
 
-![image](https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/assets/14201091/4c1858dc-2230-47c6-a165-b22e07c7856e)
+**Get your wishlist URL:** on Amazon, open the list → **Send list to others** →
+**View only** → **Copy link** → paste as `WISHLIST_URL` in `.env`.
 
-3. Paste the copied link in `target_url`.
-https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L48
-4. Login to your Twilio account.
-5. Go to `Account` -> `API keys & tokens`.
-6. Copy your live `account_sid` and `auth_token` to the code.
-https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L134-L135
-7. Add your WhatsApp number
-https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L141
-8. Run the code. The first run should create a file called `price_tracker.csv`. On every consecutive run, it'll update the CSV file with the latest price information. Once the price drop on an item is more than `8%` (you can modify the threshold here)
-https://github.com/aneeshtigga/amazon_wl_pricedrop_alert/blob/94b2d6739c3b3d685fae09ddb9051cb719528d4d/tracker_masked.py#L155
+## ⚙️ Configuration (`.env`)
 
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `WISHLIST_URL` | ✅ | — | Public "View only" sharable wishlist link |
+| `DROP_THRESHOLD` | | `8` | Notify when price drops more than this % |
+| `CHECK_INTERVAL_SECONDS` | | `300` | Seconds between checks |
+| `CSV_FILE` | | `price_tracker.csv` | Current snapshot output |
+| `HISTORY_FILE` | | `price_history.csv` | Durable per-URL history (initial price, lowest seen) |
+| `TWILIO_ACCOUNT_SID` | | — | Twilio SID (enables WhatsApp) |
+| `TWILIO_AUTH_TOKEN` | | — | Twilio auth token |
+| `TWILIO_FROM` | | — | Twilio WhatsApp sender, e.g. `whatsapp:+14155238886` |
+| `TWILIO_TO` | | — | Your WhatsApp number, e.g. `whatsapp:+91...` |
 
+WhatsApp turns on only when **all four** Twilio values are set; otherwise drops
+print to the console.
+
+**How history works:** `price_history.csv` accumulates each item's initial price
+and lowest-ever price keyed by product URL, and is never pruned — so an item
+going out of stock or dropping off the wishlist for a cycle keeps its history
+when it returns. `price_tracker.csv` carries a `last_updated` timestamp, written
+every cycle.
+
+## 💬 WhatsApp alerts (optional)
+
+1. Create a [Twilio](https://www.twilio.com/) account.
+2. Activate the WhatsApp sandbox (or a WhatsApp sender).
+3. Put your **Account SID** and **Auth Token** in `.env`.
+4. Set `TWILIO_FROM` (sandbox number) and `TWILIO_TO` (your number, E.164).
+
+## 🐳 Run 24×7 on TrueNAS SCALE (Docker)
+
+The script self-loops, so it runs as one always-on container. Data persists to a
+dataset, surviving restarts and updates. Needs TrueNAS SCALE 24.10 ("Electric
+Eel")+.
+
+1. **Create a dataset** for app data (e.g. `tank/appdata/pricedrop`) and note its
+   host path (`/mnt/tank/appdata/pricedrop`).
+2. **Copy this repo onto the NAS**, add your `.env` (`cp .env.example .env`).
+3. **Point the volume at your dataset** in `docker-compose.yml`:
+   ```yaml
+   volumes:
+     - /mnt/tank/appdata/pricedrop:/data   # <-- your dataset host path
+   ```
+4. **Build and start** (via SSH):
+   ```bash
+   docker compose up -d --build
+   ```
+
+Manage: `docker compose logs -f` (watch), `docker compose restart`,
+`docker compose down` (stop). `restart: unless-stopped` auto-recovers after
+reboot. CSV lives at `/mnt/tank/appdata/pricedrop/price_tracker.csv`.
+
+> Prefer the Apps UI? **Apps → Discover → Custom App** accepts a Compose spec.
+> Build the image first (`docker compose build`) or push to a registry, then
+> reference it with `image:` instead of `build:`.
+
+## 🔒 Security
+
+Secrets live only in `.env` (git-ignored — never commit it). `price_tracker.csv`
+and `price_history.csv` are generated locally and git-ignored too.
